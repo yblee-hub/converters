@@ -1,0 +1,7 @@
+# Ignore all files by default
+*
+
+# Allow converter.html and gitignore
+!converter.html
+!.gitignore
+!README.md

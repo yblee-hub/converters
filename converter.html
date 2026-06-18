@@ -1,0 +1,2544 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TIF & AI to PNG Premium Converter</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- CDNs for UTIF.js, JSZip and PDF.js -->
+  <script src="https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <style>
+    :root {
+      --bg-gradient-start: #0b0f19;
+      --bg-gradient-end: #141b2b;
+      --card-bg: rgba(22, 30, 49, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-hover-border: rgba(59, 130, 246, 0.4);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent-color: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-glow: rgba(59, 130, 246, 0.25);
+      --success-color: #10b981;
+      --warning-color: #f59e0b;
+      --danger-color: #ef4444;
+      --font-outfit: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: linear-gradient(135deg, var(--bg-gradient-start), var(--bg-gradient-end));
+      color: var(--text-primary);
+      font-family: var(--font-inter);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    header {
+      padding: 2rem 2rem 1.5rem;
+      border-bottom: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      background-color: rgba(11, 15, 25, 0.5);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+    }
+
+    .logo-icon svg {
+      width: 22px;
+      height: 22px;
+      fill: #fff;
+    }
+
+    .logo-text h1 {
+      font-family: var(--font-outfit);
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(to right, #3b82f6, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .logo-text p {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 0.1rem;
+    }
+
+    .system-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.85rem;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      border: 1px solid var(--card-border);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: var(--success-color);
+      box-shadow: 0 0 8px var(--success-color);
+    }
+
+    .main-layout {
+      flex: 1;
+      max-width: 1400px;
+      width: 100%;
+      margin: 1.5rem auto 2rem;
+      padding: 0 2rem;
+      display: none;
+      grid-template-columns: 380px 1fr;
+      gap: 2rem;
+    }
+
+    .main-layout.active {
+      display: grid;
+    }
+
+    .tabs-wrapper {
+      max-width: 1400px;
+      width: 100%;
+      margin: 1.5rem auto 0;
+      padding: 0 2rem;
+    }
+
+    .tabs-container {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 0.25rem;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-family: var(--font-outfit);
+      font-size: 1.05rem;
+      font-weight: 600;
+      padding: 0.75rem 1.5rem;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.2s ease;
+      border-radius: 12px 12px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .tab-btn.active {
+      color: var(--accent-color);
+      background: rgba(59, 130, 246, 0.08);
+    }
+
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -0.25rem;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(to right, #3b82f6, #8b5cf6);
+      border-radius: 3px 3px 0 0;
+      box-shadow: 0 -2px 10px rgba(59, 130, 246, 0.5);
+    }
+
+    .tab-btn-icon {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    /* Sidebar controls */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .panel {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 1.5rem;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .panel-title {
+      font-family: var(--font-outfit);
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 0.75rem;
+    }
+
+    .panel-title svg {
+      width: 18px;
+      height: 18px;
+      fill: var(--accent-color);
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+    }
+
+    .select-wrapper {
+      position: relative;
+    }
+
+    select, input[type="text"], input[type="number"] {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      color: var(--text-primary);
+      font-family: var(--font-inter);
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    select:focus, input[type="text"]:focus, input[type="number"]:focus {
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    /* Background Type Option Details */
+    .color-picker-container {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    input[type="color"] {
+      -webkit-appearance: none;
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      cursor: pointer;
+      background: none;
+    }
+
+    input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+
+    input[type="color"]::-webkit-color-swatch {
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+    }
+
+    /* Scaling / Resizing toggle */
+    .option-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+
+    .toggle-btn {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--card-border);
+      padding: 0.6rem;
+      border-radius: 8px;
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .toggle-btn.active {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: var(--accent-color);
+      color: var(--text-primary);
+    }
+
+    /* Dashboard Workspace */
+    .workspace-area {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    /* Drag & Drop */
+    .dropzone {
+      background: rgba(22, 30, 49, 0.4);
+      border: 2px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 24px;
+      padding: 3.5rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dropzone::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--accent-color);
+      background: rgba(22, 30, 49, 0.6);
+      box-shadow: 0 10px 40px rgba(59, 130, 246, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .dropzone:hover::before, .dropzone.dragover::before {
+      opacity: 1;
+    }
+
+    .dropzone-icon {
+      width: 72px;
+      height: 72px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+      border: 1px solid var(--card-border);
+      transition: all 0.3s;
+    }
+
+    .dropzone:hover .dropzone-icon, .dropzone.dragover .dropzone-icon {
+      background: rgba(59, 130, 246, 0.1);
+      border-color: rgba(59, 130, 246, 0.3);
+      transform: scale(1.05);
+    }
+
+    .dropzone-icon svg {
+      width: 32px;
+      height: 32px;
+      fill: var(--text-secondary);
+      transition: fill 0.3s;
+    }
+
+    .dropzone:hover .dropzone-icon svg, .dropzone.dragover .dropzone-icon svg {
+      fill: var(--accent-color);
+    }
+
+    .dropzone-text h2 {
+      font-family: var(--font-outfit);
+      font-size: 1.35rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .dropzone-text p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    /* Queue Header & Global Actions */
+    .queue-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(16px);
+      min-height: 400px;
+    }
+
+    .queue-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.4);
+    }
+
+    .queue-title {
+      font-family: var(--font-outfit);
+      font-size: 1.1rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .queue-count-badge {
+      background: var(--accent-color);
+      color: #fff;
+      font-size: 0.75rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
+    .queue-actions {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      border: 1px solid transparent;
+      padding: 0.6rem 1.2rem;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: var(--font-inter);
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: var(--accent-color);
+      color: #fff;
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+      box-shadow: 0 4px 20px rgba(59, 130, 246, 0.5);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--card-border);
+      color: var(--text-primary);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.2);
+      color: var(--danger-color);
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Queue List */
+    .queue-list {
+      flex: 1;
+      overflow-y: auto;
+      max-height: 500px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .queue-list::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .queue-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .queue-list::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+
+    .queue-list::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 300px;
+      color: var(--text-secondary);
+      gap: 1rem;
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      fill: rgba(255, 255, 255, 0.08);
+    }
+
+    /* Queue Card */
+    .queue-card {
+      background: rgba(15, 23, 42, 0.4);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 1rem 1.25rem;
+      display: grid;
+      grid-template-columns: 30px 60px 1fr 180px 120px;
+      align-items: center;
+      gap: 1.25rem;
+      position: relative;
+      transition: all 0.2s;
+    }
+
+    .queue-card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+      background: rgba(15, 23, 42, 0.6);
+    }
+
+    .queue-card.processing {
+      border-color: var(--accent-color);
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.1);
+    }
+
+    .queue-card.success {
+      border-left: 3px solid var(--success-color);
+    }
+
+    .queue-card.error {
+      border-left: 3px solid var(--danger-color);
+    }
+
+    /* Thumbnail Box */
+    .thumbnail-box {
+      width: 60px;
+      height: 60px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 10px;
+      border: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .thumbnail-box img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .thumbnail-box canvas {
+      display: none;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-top-color: var(--accent-color);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* File Meta */
+    .file-meta {
+      overflow: hidden;
+    }
+
+    .file-name {
+      font-weight: 500;
+      font-size: 0.95rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 0.25rem;
+    }
+
+    .file-stats {
+      display: flex;
+      gap: 0.75rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      align-items: center;
+    }
+
+    .badge-pages {
+      background: rgba(139, 92, 246, 0.15);
+      color: #a78bfa;
+      padding: 0.1rem 0.3rem;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 0.65rem;
+    }
+
+    /* File Progress */
+    .file-status-col {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .progress-bar-container {
+      height: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 2px;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent-color);
+      width: 0%;
+      transition: width 0.2s ease;
+    }
+
+    .status-text {
+      font-size: 0.75rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    .status-text.pending { color: var(--text-secondary); }
+    .status-text.decoding { color: var(--warning-color); }
+    .status-text.converting { color: var(--accent-color); }
+    .status-text.success { color: var(--success-color); }
+    .status-text.error { color: var(--danger-color); }
+
+    /* Card actions */
+    .card-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+    }
+
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
+      background: rgba(255, 255, 255, 0.03);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+
+    .btn-icon:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-primary);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-icon-success:hover {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success-color);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-icon-danger:hover {
+      background: rgba(239, 68, 68, 0.15);
+      color: var(--danger-color);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-icon svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+    }
+
+    /* Footer Stats & Actions */
+    .footer-bar {
+      padding: 1.25rem 2rem;
+      border-top: 1px solid var(--card-border);
+      backdrop-filter: blur(12px);
+      background-color: rgba(11, 15, 25, 0.8);
+      position: sticky;
+      bottom: 0;
+      z-index: 100;
+    }
+
+    .footer-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    .progress-summary {
+      flex: 1;
+      max-width: 500px;
+    }
+
+    .summary-text {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    .summary-text span strong {
+      color: var(--text-primary);
+    }
+
+    .global-progress-bar {
+      height: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .global-progress-fill {
+      height: 100%;
+      background: linear-gradient(to right, #3b82f6, #10b981);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .global-actions {
+      display: flex;
+      gap: 1rem;
+    }
+
+    /* Notification Toast System */
+    .toast-container {
+      position: fixed;
+      bottom: 90px;
+      right: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      z-index: 999;
+    }
+
+    .toast {
+      background: rgba(22, 30, 49, 0.9);
+      border: 1px solid var(--card-border);
+      border-left: 4px solid var(--accent-color);
+      border-radius: 12px;
+      padding: 0.85rem 1.25rem;
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      font-weight: 500;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      transform: translateX(120%);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      min-width: 280px;
+      max-width: 400px;
+    }
+
+    .toast.show {
+      transform: translateX(0);
+    }
+
+    .toast.success { border-left-color: var(--success-color); }
+    .toast.error { border-left-color: var(--danger-color); }
+    .toast.warning { border-left-color: var(--warning-color); }
+
+    .toast-icon {
+      flex-shrink: 0;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .toast-icon svg {
+      width: 100%;
+      height: 100%;
+      fill: currentColor;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="header-container">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3zM12 9v4H9l3 3 3-3h-3V9z"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <h1>TIF & AI to PNG Converter</h1>
+          <p>Premium High-Fidelity Local Converter</p>
+        </div>
+      </div>
+      <div class="system-status">
+        <div class="status-dot"></div>
+        <span>브라우저 로컬 변환 (보안 안전)</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Tabs Navigation -->
+  <div class="tabs-wrapper">
+    <div class="tabs-container">
+      <button class="tab-btn active" onclick="switchTab(this, 'tif')">
+        <svg class="tab-btn-icon" viewBox="0 0 24 24">
+          <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM19 18H6c-2.21 0-4-1.79-4-4 0-2.05 1.53-3.76 3.56-3.97l1.07-.11.5-.95C8.08 7.14 9.94 6 12 6c2.62 0 4.88 1.86 5.39 4.43l.3 1.5 1.53.11c1.56.1 2.78 1.41 2.78 2.96 0 1.65-1.35 3-3 3zM12 9v4H9l3 3 3-3h-3V9z"/>
+        </svg>
+        TIF to PNG 변환기
+      </button>
+      <button class="tab-btn" onclick="switchTab(this, 'ai')">
+        <svg class="tab-btn-icon" viewBox="0 0 24 24">
+          <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm4.24 16L12 15.45 7.77 18l1.12-4.81-3.73-3.23 4.92-.42L12 5l1.92 4.54 4.92.42-3.73 3.23L16.23 18z"/>
+        </svg>
+        AI to PNG 변환기
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Layout - TIF Tab -->
+  <div id="tif-content" class="main-layout active">
+    
+    <!-- Sidebar / Settings -->
+    <div class="sidebar">
+      <div class="panel">
+        <div class="panel-title">
+          <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+          변환 옵션 설정
+        </div>
+
+        <!-- PNG Background style -->
+        <div class="form-group">
+          <label for="bg-type">배경 채우기 방식</label>
+          <div class="select-wrapper">
+            <select id="bg-type">
+              <option value="transparent" selected>투명 배경 (알파 채널 유지)</option>
+              <option value="white">흰색 배경 (#FFFFFF)</option>
+              <option value="black">검은색 배경 (#000000)</option>
+              <option value="custom">사용자 지정 색상</option>
+            </select>
+          </div>
+          <div class="color-picker-container" id="custom-color-container" style="display: none;">
+            <input type="color" id="custom-bg-color" value="#ffffff">
+            <span style="font-size: 0.85rem;" id="custom-color-text">#ffffff</span>
+          </div>
+        </div>
+
+        <!-- Remove White Background option -->
+        <div class="form-group" style="margin-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 1rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+            <input type="checkbox" id="remove-white" style="width: 16px; height: 16px; cursor: pointer;">
+            <label for="remove-white" style="margin-bottom: 0; cursor: pointer; font-weight: 600; color: var(--text-primary);">흰색 배경 자동 제거 (크로마키)</label>
+          </div>
+          <div id="white-tolerance-container" style="display: none; margin-top: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+              <label for="white-tolerance" style="font-size: 0.75rem; margin-bottom: 0;">제거 허용 오차 (Tolerance)</label>
+              <span id="white-tolerance-value" style="font-size: 0.75rem; color: var(--accent-color); font-weight: 600;">15</span>
+            </div>
+            <input type="range" id="white-tolerance" min="0" max="100" value="15" style="width: 100%; cursor: pointer;">
+            <p style="font-size: 0.7rem; color: var(--warning-color); margin-top: 0.4rem; line-height: 1.3;">
+              * 주의: 캐릭터 내부에 완전히 하얀색(눈동자, 옷 등)이 포함되어 있으면 해당 부분도 함께 투명해질 수 있습니다. 오차 범위를 조절해 가며 테스트하세요.
+            </p>
+          </div>
+        </div>
+
+        <!-- Suffix options -->
+        <div class="form-group">
+          <label for="filename-suffix">파일명 접미사</label>
+          <input type="text" id="filename-suffix" placeholder="예: _converted (생략 가능)">
+        </div>
+
+        <!-- Sizing options -->
+        <div class="form-group">
+          <label>이미지 크기 조절 (Resizing)</label>
+          <div class="option-grid" style="margin-bottom: 0.75rem;">
+            <button class="toggle-btn active" id="size-original" onclick="setSizeMode('original')">원본 크기</button>
+            <button class="toggle-btn" id="size-custom" onclick="setSizeMode('custom')">크기 제한</button>
+          </div>
+          
+          <div id="custom-size-options" style="display: none;">
+            <div class="option-grid">
+              <div>
+                <label for="max-width" style="font-size: 0.75rem;">최대 가로 (px)</label>
+                <input type="number" id="max-width" value="2000" min="100">
+              </div>
+              <div>
+                <label for="max-height" style="font-size: 0.75rem;">최대 세로 (px)</label>
+                <input type="number" id="max-height" value="2000" min="100">
+              </div>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">
+              * 원본 비율을 유지하며 최대 크기에 맞춰 축소됩니다.
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="panel">
+        <div class="panel-title" style="margin-bottom: 0.75rem; padding-bottom: 0.5rem;">
+          사용 방법 안내
+        </div>
+        <ul style="font-size: 0.8rem; color: var(--text-secondary); padding-left: 1.1rem; line-height: 1.6;">
+          <li>원하는 옵션을 위에서 먼저 설정합니다.</li>
+          <li>변환하려는 TIF 파일을 오른쪽 영역에 드래그하거나 클릭하여 추가합니다.</li>
+          <li><strong>[일괄 변환 시작]</strong> 버튼을 눌러 변환을 진행합니다.</li>
+          <li>변환 완료 후 개별 다운로드 또는 <strong>[전체 ZIP 다운로드]</strong>를 클릭합니다.</li>
+          <li style="margin-top: 0.5rem; color: var(--accent-color);">* 파일 처리는 PC의 브라우저 내부 메모리에서 직접 수행되어 외부 서버에 업로드되지 않아 유출에 안전합니다.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Workspace / Dropzone / List -->
+    <div class="workspace-area">
+      
+      <!-- Drag & Drop Zone -->
+      <div class="dropzone" id="dropzone" onclick="document.getElementById('file-input').click()">
+        <div class="dropzone-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+          </svg>
+        </div>
+        <div class="dropzone-text">
+          <h2>TIF / TIFF 파일을 여기에 드래그 앤 드롭 하세요</h2>
+          <p>또는 영역을 클릭하여 파일 탐색기 열기 (다중 선택 지원)</p>
+        </div>
+        <input type="file" id="file-input" class="file-input" accept=".tif,.tiff" multiple>
+      </div>
+
+      <!-- Queue Display -->
+      <div class="queue-container">
+        <div class="queue-header">
+          <div class="queue-title" style="display: flex; align-items: center; gap: 0.5rem;">
+            <input type="checkbox" id="select-all-queue" checked style="width: 16px; height: 16px; cursor: pointer;" onclick="toggleSelectAll(this)">
+            변환 대기 대시보드
+            <span class="queue-count-badge" id="queue-count">0</span>
+          </div>
+          <div class="queue-actions">
+            <button class="btn btn-secondary" id="btn-clear-completed" disabled onclick="clearCompleted()">완료된 항목 정리</button>
+            <button class="btn btn-danger" id="btn-clear-all" disabled onclick="clearAll()">전체 삭제</button>
+          </div>
+        </div>
+
+        <div class="queue-list" id="queue-list">
+          <div class="empty-state" id="empty-state">
+            <svg viewBox="0 0 24 24">
+              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 16H5c-.55 0-1-.45-1-1V5c0-.55.45-1 1-1h12c.55 0 1 .45 1 1v13c0 .55-.45 1-1 1zm-4.5-9L11 11.5 9 9l-3 4h12l-4.5-3z"/>
+            </svg>
+            <p>추가된 파일이 없습니다. 파일들을 드래그하여 놓아주세요.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Main Layout - AI Tab -->
+  <div id="ai-content" class="main-layout">
+    
+    <!-- Sidebar / Settings -->
+    <div class="sidebar">
+      <div class="panel">
+        <div class="panel-title">
+          <svg viewBox="0 0 24 24"><path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+          변환 옵션 설정 (AI)
+        </div>
+
+        <!-- PNG Background style -->
+        <div class="form-group">
+          <label for="bg-type-ai">배경 채우기 방식</label>
+          <div class="select-wrapper">
+            <select id="bg-type-ai">
+              <option value="transparent" selected>투명 배경 (알파 채널 유지)</option>
+              <option value="white">흰색 배경 (#FFFFFF)</option>
+              <option value="black">검은색 배경 (#000000)</option>
+              <option value="custom">사용자 지정 색상</option>
+            </select>
+          </div>
+          <div class="color-picker-container" id="custom-color-container-ai" style="display: none;">
+            <input type="color" id="custom-bg-color-ai" value="#ffffff">
+            <span style="font-size: 0.85rem;" id="custom-color-text-ai">#ffffff</span>
+          </div>
+        </div>
+
+        <!-- Remove White Background option -->
+        <div class="form-group" style="margin-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 1rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+            <input type="checkbox" id="remove-white-ai" style="width: 16px; height: 16px; cursor: pointer;">
+            <label for="remove-white-ai" style="margin-bottom: 0; cursor: pointer; font-weight: 600; color: var(--text-primary);">흰색 배경 자동 제거 (크로마키)</label>
+          </div>
+          <div id="white-tolerance-container-ai" style="display: none; margin-top: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+              <label for="white-tolerance-ai" style="font-size: 0.75rem; margin-bottom: 0;">제거 허용 오차 (Tolerance)</label>
+              <span id="white-tolerance-value-ai" style="font-size: 0.75rem; color: var(--accent-color); font-weight: 600;">15</span>
+            </div>
+            <input type="range" id="white-tolerance-ai" min="0" max="100" value="15" style="width: 100%; cursor: pointer;">
+            <p style="font-size: 0.7rem; color: var(--warning-color); margin-top: 0.4rem; line-height: 1.3;">
+              * 주의: 캐릭터 내부에 완전히 하얀색(눈동자, 옷 등)이 포함되어 있으면 해당 부분도 함께 투명해질 수 있습니다. 오차 범위를 조절해 가며 테스트하세요.
+            </p>
+          </div>
+        </div>
+
+        <!-- AI Vector Rendering Quality (DPI) -->
+        <div class="form-group" style="margin-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 1rem;">
+          <label for="render-dpi-ai">AI 벡터 렌더링 화질 (DPI)</label>
+          <div class="select-wrapper">
+            <select id="render-dpi-ai">
+              <option value="72">72 DPI (일반 화질 - Web)</option>
+              <option value="150" selected>150 DPI (고화질 - 추천)</option>
+              <option value="300">300 DPI (인쇄용 초고화질)</option>
+              <option value="450">450 DPI (초고화질 - 대형 출력)</option>
+            </select>
+          </div>
+          <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem; line-height: 1.35;">
+            * DPI가 높을수록 선명하지만 변환 속도가 느려지고 파일 크기가 커집니다.
+          </p>
+        </div>
+
+        <!-- Suffix options -->
+        <div class="form-group" style="margin-top: 1rem; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 1rem;">
+          <label for="filename-suffix-ai">파일명 접미사</label>
+          <input type="text" id="filename-suffix-ai" placeholder="예: _converted (생략 가능)">
+        </div>
+
+        <!-- Sizing options -->
+        <div class="form-group">
+          <label>이미지 크기 조절 (Resizing)</label>
+          <div class="option-grid" style="margin-bottom: 0.75rem;">
+            <button class="toggle-btn active" id="size-original-ai" onclick="setSizeModeAi('original')">원본 크기</button>
+            <button class="toggle-btn" id="size-custom-ai" onclick="setSizeModeAi('custom')">크기 제한</button>
+          </div>
+          
+          <div id="custom-size-options-ai" style="display: none;">
+            <div class="option-grid">
+              <div>
+                <label for="max-width-ai" style="font-size: 0.75rem;">최대 가로 (px)</label>
+                <input type="number" id="max-width-ai" value="2000" min="100">
+              </div>
+              <div>
+                <label for="max-height-ai" style="font-size: 0.75rem;">최대 세로 (px)</label>
+                <input type="number" id="max-height-ai" value="2000" min="100">
+              </div>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem;">
+              * 원본 비율을 유지하며 최대 크기에 맞춰 축소됩니다.
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="panel">
+        <div class="panel-title" style="margin-bottom: 0.75rem; padding-bottom: 0.5rem;">
+          사용 방법 안내 (AI)
+        </div>
+        <ul style="font-size: 0.8rem; color: var(--text-secondary); padding-left: 1.1rem; line-height: 1.6;">
+          <li>원하는 옵션을 위에서 먼저 설정합니다.</li>
+          <li>변환하려는 PDF 호환 AI 파일을 오른쪽 영역에 드래그하거나 클릭하여 추가합니다.</li>
+          <li>추가 시 대지(페이지)별로 자동 분할되어 대기열에 등록됩니다.</li>
+          <li><strong>[일괄 변환 시작]</strong> 버튼을 눌러 변환을 진행합니다.</li>
+          <li>변환 완료 후 개별 다운로드 또는 <strong>[전체 ZIP 다운로드]</strong>를 클릭합니다.</li>
+          <li style="margin-top: 0.5rem; color: var(--accent-color);">* 파일 처리는 PC의 브라우저 내부 메모리에서 직접 수행되어 외부 서버에 업로드되지 않아 유출에 안전합니다.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Workspace / Dropzone / List -->
+    <div class="workspace-area">
+      
+      <!-- Drag & Drop Zone -->
+      <div class="dropzone" id="dropzone-ai" onclick="document.getElementById('file-input-ai').click()">
+        <div class="dropzone-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+          </svg>
+        </div>
+        <div class="dropzone-text">
+          <h2>AI 파일을 여기에 드래그 앤 드롭 하세요</h2>
+          <p>또는 영역을 클릭하여 파일 탐색기 열기 (다중 선택 지원)</p>
+        </div>
+        <input type="file" id="file-input-ai" class="file-input" accept=".ai" multiple>
+      </div>
+
+      <!-- Queue Display -->
+      <div class="queue-container">
+        <div class="queue-header">
+          <div class="queue-title" style="display: flex; align-items: center; gap: 0.5rem;">
+            <input type="checkbox" id="select-all-queue-ai" checked style="width: 16px; height: 16px; cursor: pointer;" onclick="toggleSelectAllAi(this)">
+            변환 대기 대시보드 (AI)
+            <span class="queue-count-badge" id="queue-count-ai">0</span>
+          </div>
+          <div class="queue-actions">
+            <button class="btn btn-secondary" id="btn-clear-completed-ai" disabled onclick="clearCompletedAi()">완료된 항목 정리</button>
+            <button class="btn btn-danger" id="btn-clear-all-ai" disabled onclick="clearAllAi()">전체 삭제</button>
+          </div>
+        </div>
+
+        <div class="queue-list" id="queue-list-ai">
+          <div class="empty-state" id="empty-state-ai">
+            <svg viewBox="0 0 24 24">
+              <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 16H5c-.55 0-1-.45-1-1V5c0-.55.45-1 1-1h12c.55 0 1 .45 1 1v13c0 .55-.45 1-1 1zm-4.5-9L11 11.5 9 9l-3 4h12l-4.5-3z"/>
+            </svg>
+            <p>추가된 파일이 없습니다. 파일들을 드래그하여 놓아주세요.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Bottom Global Progress and Action bar (TIF) -->
+  <div id="tif-footer" class="footer-bar">
+    <div class="footer-container">
+      <div class="progress-summary">
+        <div class="summary-text">
+          <span id="progress-status-text">진행 상태: 대기 중</span>
+          <span id="progress-percent-text">0% (0/0)</span>
+        </div>
+        <div class="global-progress-bar">
+          <div class="global-progress-fill" id="global-progress-fill"></div>
+        </div>
+      </div>
+      <div class="global-actions">
+        <button class="btn btn-primary" id="btn-start-convert" disabled onclick="startBatchConversion()">
+          <svg style="width:16px; height:16px; fill:currentColor;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+          일괄 변환 시작
+        </button>
+        <button class="btn btn-secondary" id="btn-download-zip" disabled onclick="downloadAllAsZip()">
+          <svg style="width:16px; height:16px; fill:currentColor;" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+          선택 ZIP 다운로드 (0개)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Global Progress and Action bar (AI) -->
+  <div id="ai-footer" class="footer-bar" style="display: none;">
+    <div class="footer-container">
+      <div class="progress-summary">
+        <div class="summary-text">
+          <span id="progress-status-text-ai">진행 상태: 대기 중</span>
+          <span id="progress-percent-text-ai">0% (0/0)</span>
+        </div>
+        <div class="global-progress-bar">
+          <div class="global-progress-fill" id="global-progress-fill-ai"></div>
+        </div>
+      </div>
+      <div class="global-actions">
+        <button class="btn btn-primary" id="btn-start-convert-ai" disabled onclick="startBatchConversionAi()">
+          <svg style="width:16px; height:16px; fill:currentColor;" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+          일괄 변환 시작
+        </button>
+        <button class="btn btn-secondary" id="btn-download-zip-ai" disabled onclick="downloadAllAsZipAi()">
+          <svg style="width:16px; height:16px; fill:currentColor;" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+          선택 ZIP 다운로드 (0개)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Javascript Logic -->
+  <script>
+    // PDF.js global worker setup
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    // Tab switcher logic
+    let currentTab = 'tif';
+    function switchTab(element, tab) {
+      currentTab = tab;
+      
+      // Update Tab button active state
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      element.classList.add('active');
+      
+      // Toggle tab content and footer visibility
+      if (tab === 'tif') {
+        document.getElementById('tif-content').classList.add('active');
+        document.getElementById('ai-content').classList.remove('active');
+        document.getElementById('tif-footer').style.display = 'block';
+        document.getElementById('ai-footer').style.display = 'none';
+      } else {
+        document.getElementById('tif-content').classList.remove('active');
+        document.getElementById('ai-content').classList.add('active');
+        document.getElementById('tif-footer').style.display = 'none';
+        document.getElementById('ai-footer').style.display = 'block';
+      }
+    }
+
+    // State management for TIF
+    let filesQueue = []; // Array of files: { id, file, status, progress, dimensions, outputBlob, outputName, error }
+    let isConverting = false;
+    let cancelRequested = false;
+    let sizeMode = 'original'; // original, custom
+
+    // State management for AI
+    let filesQueueAi = [];
+    let isConvertingAi = false;
+    let cancelRequestedAi = false;
+    let sizeModeAi = 'original'; // original, custom
+
+    // Background type toggler
+    const bgTypeSelect = document.getElementById('bg-type');
+    const customColorContainer = document.getElementById('custom-color-container');
+    const customBgColor = document.getElementById('custom-bg-color');
+    const customColorText = document.getElementById('custom-color-text');
+
+    bgTypeSelect.addEventListener('change', (e) => {
+      if (e.target.value === 'custom') {
+        customColorContainer.style.display = 'flex';
+      } else {
+        customColorContainer.style.display = 'none';
+      }
+    });
+
+    customBgColor.addEventListener('input', (e) => {
+      customColorText.textContent = e.target.value.toUpperCase();
+    });
+
+    // Remove White Background handler
+    const removeWhiteCheckbox = document.getElementById('remove-white');
+    const whiteToleranceContainer = document.getElementById('white-tolerance-container');
+    const whiteToleranceSlider = document.getElementById('white-tolerance');
+    const whiteToleranceValue = document.getElementById('white-tolerance-value');
+
+    removeWhiteCheckbox.addEventListener('change', (e) => {
+      whiteToleranceContainer.style.display = e.target.checked ? 'block' : 'none';
+    });
+
+    whiteToleranceSlider.addEventListener('input', (e) => {
+      whiteToleranceValue.textContent = e.target.value;
+    });
+
+    // Resize Mode
+    function setSizeMode(mode) {
+      sizeMode = mode;
+      document.getElementById('size-original').classList.toggle('active', mode === 'original');
+      document.getElementById('size-custom').classList.toggle('active', mode === 'custom');
+      document.getElementById('custom-size-options').style.display = mode === 'custom' ? 'block' : 'none';
+    }
+
+    // Drag & Drop event bindings
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('file-input');
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropzone.classList.add('dragover');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('dragover');
+      }, false);
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      handleFilesSelected(files);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      handleFilesSelected(e.target.files);
+    });
+
+    // Background type toggler (AI)
+    const bgTypeSelectAi = document.getElementById('bg-type-ai');
+    const customColorContainerAi = document.getElementById('custom-color-container-ai');
+    const customBgColorAi = document.getElementById('custom-bg-color-ai');
+    const customColorTextAi = document.getElementById('custom-color-text-ai');
+
+    bgTypeSelectAi.addEventListener('change', (e) => {
+      if (e.target.value === 'custom') {
+        customColorContainerAi.style.display = 'flex';
+      } else {
+        customColorContainerAi.style.display = 'none';
+      }
+    });
+
+    customBgColorAi.addEventListener('input', (e) => {
+      customColorTextAi.textContent = e.target.value.toUpperCase();
+    });
+
+    // Remove White Background handler (AI)
+    const removeWhiteCheckboxAi = document.getElementById('remove-white-ai');
+    const whiteToleranceContainerAi = document.getElementById('white-tolerance-container-ai');
+    const whiteToleranceSliderAi = document.getElementById('white-tolerance-ai');
+    const whiteToleranceValueAi = document.getElementById('white-tolerance-value-ai');
+
+    removeWhiteCheckboxAi.addEventListener('change', (e) => {
+      whiteToleranceContainerAi.style.display = e.target.checked ? 'block' : 'none';
+    });
+
+    whiteToleranceSliderAi.addEventListener('input', (e) => {
+      whiteToleranceValueAi.textContent = e.target.value;
+    });
+
+    // Resize Mode (AI)
+    function setSizeModeAi(mode) {
+      sizeModeAi = mode;
+      document.getElementById('size-original-ai').classList.toggle('active', mode === 'original');
+      document.getElementById('size-custom-ai').classList.toggle('active', mode === 'custom');
+      document.getElementById('custom-size-options-ai').style.display = mode === 'custom' ? 'block' : 'none';
+    }
+
+    // Drag & Drop event bindings (AI)
+    const dropzoneAi = document.getElementById('dropzone-ai');
+    const fileInputAi = document.getElementById('file-input-ai');
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzoneAi.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropzoneAi.classList.add('dragover');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzoneAi.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        dropzoneAi.classList.remove('dragover');
+      }, false);
+    });
+
+    dropzoneAi.addEventListener('drop', (e) => {
+      const dt = e.dataTransfer;
+      const files = dt.files;
+      handleFilesSelectedAi(files);
+    });
+
+    fileInputAi.addEventListener('change', (e) => {
+      handleFilesSelectedAi(e.target.files);
+    });
+
+    // File utility to format bytes
+    function formatBytes(bytes, decimals = 2) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const dm = decimals < 0 ? 0 : decimals;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+    }
+
+    // Toast Alert
+    function showToast(message, type = 'info', duration = 3000) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      
+      let iconSvg = '';
+      if (type === 'success') {
+        iconSvg = `<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>`;
+      } else if (type === 'error') {
+        iconSvg = `<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>`;
+      } else {
+        iconSvg = `<svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>`;
+      }
+
+      toast.innerHTML = `
+        <div class="toast-icon">${iconSvg}</div>
+        <div>${message}</div>
+      `;
+
+      container.appendChild(toast);
+      
+      // Force layout calculation for animation transition
+      toast.offsetHeight;
+      toast.classList.add('show');
+
+      setTimeout(() => {
+        toast.classList.remove('show');
+        toast.addEventListener('transitionend', () => {
+          toast.remove();
+        });
+      }, duration);
+    }
+
+    // Handle incoming selected files
+    function handleFilesSelected(filesList) {
+      if (isConverting) {
+        showToast('변환 진행 중에는 새 파일을 추가할 수 없습니다.', 'warning');
+        return;
+      }
+
+      const validFiles = Array.from(filesList).filter(file => {
+        const ext = file.name.split('.').pop().toLowerCase();
+        return ext === 'tif' || ext === 'tiff';
+      });
+
+      if (validFiles.length === 0) {
+        showToast('TIF / TIFF 파일만 지원합니다.', 'error');
+        return;
+      }
+
+      validFiles.forEach(file => {
+        // Prevent duplicates
+        if (filesQueue.some(item => item.file.name === file.name && item.file.size === file.size)) {
+          return; 
+        }
+
+        const id = 'file_' + Math.random().toString(36).substr(2, 9);
+        filesQueue.push({
+          id: id,
+          file: file,
+          status: 'pending', // pending, decoding, converting, success, error
+          progress: 0,
+          dimensions: '',
+          outputBlob: null,
+          outputName: '',
+          error: '',
+          selected: true
+        });
+      });
+
+      updateUI();
+      showToast(`${validFiles.length}개의 파일이 대기열에 추가되었습니다.`, 'info');
+    }
+
+    // Update the whole UI elements based on state
+    function updateUI() {
+      const queueList = document.getElementById('queue-list');
+      const emptyState = document.getElementById('empty-state');
+      const queueCount = document.getElementById('queue-count');
+      const btnStartConvert = document.getElementById('btn-start-convert');
+      const btnClearCompleted = document.getElementById('btn-clear-completed');
+      const btnClearAll = document.getElementById('btn-clear-all');
+      const btnDownloadZip = document.getElementById('btn-download-zip');
+
+      // Update counters
+      queueCount.textContent = filesQueue.length;
+
+      if (filesQueue.length === 0) {
+        emptyState.style.display = 'flex';
+        // Remove existing cards
+        Array.from(queueList.querySelectorAll('.queue-card')).forEach(card => card.remove());
+        
+        btnStartConvert.disabled = true;
+        btnClearCompleted.disabled = true;
+        btnClearAll.disabled = true;
+        btnDownloadZip.disabled = true;
+
+        updateGlobalProgress(0, 0, 0);
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      
+      // Sync queue rendering
+      filesQueue.forEach(item => {
+        let card = document.getElementById(item.id);
+        if (!card) {
+          card = createQueueCard(item);
+          queueList.appendChild(card);
+        } else {
+          updateQueueCardUI(card, item);
+        }
+      });
+
+      // Remove cards that are no longer in queue
+      Array.from(queueList.querySelectorAll('.queue-card')).forEach(card => {
+        const id = card.id;
+        if (!filesQueue.some(item => item.id === id)) {
+          card.remove();
+        }
+      });
+
+      // Enable/disable buttons based on queue state
+      const hasCompleted = filesQueue.some(item => item.status === 'success');
+      const hasPending = filesQueue.some(item => item.status === 'pending');
+      const selectedSuccessCount = filesQueue.filter(item => item.selected && item.status === 'success').length;
+
+      btnStartConvert.disabled = !hasPending || isConverting;
+      btnClearCompleted.disabled = !hasCompleted || isConverting;
+      btnClearAll.disabled = isConverting;
+      btnDownloadZip.disabled = selectedSuccessCount === 0 || isConverting;
+
+      // Update ZIP download button text to show select count
+      btnDownloadZip.innerHTML = `
+        <svg style="width:16px; height:16px; fill:currentColor;" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+        선택 ZIP 다운로드 (${selectedSuccessCount}개)
+      `;
+
+      // Update select-all indeterminate state
+      updateSelectAllCheckboxState();
+
+      // Update footer stats
+      const total = filesQueue.length;
+      const successCount = filesQueue.filter(item => item.status === 'success').length;
+      const failedCount = filesQueue.filter(item => item.status === 'error').length;
+      
+      let statusStr = '대기 중';
+      if (isConverting) {
+        statusStr = '변환 중...';
+      } else if (successCount + failedCount === total) {
+        statusStr = '변환 작업 종료';
+      }
+      
+      document.getElementById('progress-status-text').textContent = `상태: ${statusStr} | 완료: ${successCount} | 실패: ${failedCount}`;
+      document.getElementById('progress-percent-text').textContent = `${Math.round((successCount + failedCount) / total * 100)}% (${successCount + failedCount}/${total})`;
+      
+      const percent = (successCount + failedCount) / total * 100;
+      updateGlobalProgress(percent, successCount, total);
+    }
+
+    function updateGlobalProgress(percent, completed, total) {
+      document.getElementById('global-progress-fill').style.width = `${percent}%`;
+    }
+
+    function toggleItemSelection(id, checked) {
+      const item = filesQueue.find(x => x.id === id);
+      if (item) {
+        item.selected = checked;
+      }
+      updateUI();
+    }
+
+    function toggleSelectAll(masterCheckbox) {
+      const checked = masterCheckbox.checked;
+      filesQueue.forEach(item => {
+        item.selected = checked;
+        const chk = document.getElementById(`chk-${item.id}`);
+        if (chk) chk.checked = checked;
+      });
+      updateUI();
+    }
+
+    function updateSelectAllCheckboxState() {
+      const masterCheckbox = document.getElementById('select-all-queue');
+      if (!masterCheckbox) return;
+      
+      const allSelected = filesQueue.length > 0 && filesQueue.every(item => item.selected);
+      const noneSelected = filesQueue.length === 0 || filesQueue.every(item => !item.selected);
+      
+      masterCheckbox.checked = allSelected;
+      masterCheckbox.indeterminate = !allSelected && !noneSelected;
+    }
+
+    // Create a queue card DOM node
+    function createQueueCard(item) {
+      const card = document.createElement('div');
+      card.className = 'queue-card';
+      card.id = item.id;
+
+      card.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: center;">
+          <input type="checkbox" id="chk-${item.id}" ${item.selected ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer;" onchange="toggleItemSelection('${item.id}', this.checked)">
+        </div>
+        <div class="thumbnail-box" id="thumb-${item.id}">
+          <svg style="width:24px; height:24px; fill:rgba(255,255,255,0.25);" viewBox="0 0 24 24">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 16H6c-.55 0-1-.45-1-1V6c0-.55.45-1 1-1h12c.55 0 1 .45 1 1v12c0 .55-.45 1-1 1zm-4.5-9L11 11.5 9 9l-3 4h12l-4.5-3z"/>
+          </svg>
+        </div>
+        <div class="file-meta">
+          <div class="file-name" title="${item.file.name}">${item.file.name}</div>
+          <div class="file-stats">
+            <span class="file-size">${formatBytes(item.file.size)}</span>
+            <span class="file-resolution" id="res-${item.id}">${item.dimensions}</span>
+            <span id="multipage-badge-${item.id}"></span>
+          </div>
+        </div>
+        <div class="file-status-col">
+          <div class="status-text pending" id="status-text-${item.id}">대기 중</div>
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progress-fill-${item.id}"></div>
+          </div>
+        </div>
+        <div class="card-actions" id="actions-${item.id}">
+          <button class="btn-icon btn-icon-danger" onclick="removeFile('${item.id}')" title="삭제">
+            <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          </button>
+        </div>
+      `;
+
+      return card;
+    }
+
+    // Update existing queue card state
+    function updateQueueCardUI(card, item) {
+      // Manage border classes
+      card.classList.remove('processing', 'success', 'error');
+      
+      const statusText = document.getElementById(`status-text-${item.id}`);
+      const progressFill = document.getElementById(`progress-fill-${item.id}`);
+      const resText = document.getElementById(`res-${item.id}`);
+      const actionsDiv = document.getElementById(`actions-${item.id}`);
+      const multiPageSpan = document.getElementById(`multipage-badge-${item.id}`);
+      
+      progressFill.style.width = `${item.progress}%`;
+
+      if (item.dimensions) {
+        resText.textContent = item.dimensions;
+      }
+
+      if (item.status === 'pending') {
+        card.classList.add('pending');
+        statusText.className = 'status-text pending';
+        statusText.textContent = '대기 중';
+      } else if (item.status === 'decoding') {
+        card.classList.add('processing');
+        statusText.className = 'status-text decoding';
+        statusText.textContent = 'TIF 디코딩 중...';
+      } else if (item.status === 'converting') {
+        card.classList.add('processing');
+        statusText.className = 'status-text converting';
+        statusText.textContent = 'PNG로 변환 중...';
+      } else if (item.status === 'success') {
+        card.classList.add('success');
+        statusText.className = 'status-text success';
+        statusText.textContent = '완료';
+        
+        // Show Download & Delete
+        actionsDiv.innerHTML = `
+          <button class="btn-icon btn-icon-success" onclick="downloadSingleFile('${item.id}')" title="PNG 다운로드">
+            <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+          </button>
+          <button class="btn-icon btn-icon-danger" onclick="removeFile('${item.id}')" title="삭제">
+            <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          </button>
+        `;
+      } else if (item.status === 'error') {
+        card.classList.add('error');
+        statusText.className = 'status-text error';
+        statusText.textContent = item.error || '에러 발생';
+      }
+    }
+
+    // Action: Remove file from queue
+    function removeFile(id) {
+      if (isConverting) return;
+      filesQueue = filesQueue.filter(item => item.id !== id);
+      updateUI();
+    }
+
+    // Action: Clear all completed files
+    function clearCompleted() {
+      if (isConverting) return;
+      filesQueue = filesQueue.filter(item => item.status !== 'success');
+      updateUI();
+    }
+
+    // Action: Clear entire queue
+    function clearAll() {
+      if (isConverting) return;
+      filesQueue = [];
+      updateUI();
+    }
+
+    // Core: Start conversion process sequentially
+    async function startBatchConversion() {
+      if (isConverting) return;
+      
+      const pendingItems = filesQueue.filter(item => item.status === 'pending');
+      if (pendingItems.length === 0) return;
+
+      isConverting = true;
+      cancelRequested = false;
+      
+      // Update UI states
+      updateUI();
+
+      for (let item of pendingItems) {
+        if (cancelRequested) {
+          break;
+        }
+
+        try {
+          await convertSingleTiff(item);
+        } catch (err) {
+          console.error(err);
+          item.status = 'error';
+          item.error = err.message || '변환 오류';
+        }
+        
+        updateUI();
+      }
+
+      isConverting = false;
+      updateUI();
+      showToast('모든 변환 프로세스가 완료되었습니다.', 'success');
+    }
+
+    // Main Conversion Logic
+    function convertSingleTiff(item) {
+      return new Promise(async (resolve, reject) => {
+        try {
+          item.status = 'decoding';
+          item.progress = 20;
+          updateUI();
+
+          const file = item.file;
+          const arrayBuffer = await file.arrayBuffer();
+          
+          item.progress = 40;
+          updateUI();
+
+          // 1. Decode TIFF
+          let ifds;
+          try {
+            ifds = UTIF.decode(arrayBuffer);
+          } catch (decodeErr) {
+            throw new Error('TIFF 구조를 분석할 수 없습니다.');
+          }
+
+          if (!ifds || ifds.length === 0) {
+            throw new Error('디코딩된 이미지 데이터가 비어있습니다.');
+          }
+
+          // Render first page. If multipage, we can notify in UI.
+          const ifd = ifds[0];
+          
+          item.status = 'converting';
+          item.progress = 60;
+          updateUI();
+
+          try {
+            UTIF.decodeImage(arrayBuffer, ifd);
+          } catch (imgErr) {
+            throw new Error('이미지 픽셀 디코딩에 실패했습니다.');
+          }
+
+          const rgba = UTIF.toRGBA8(ifd);
+          const w = ifd.width;
+          const h = ifd.height;
+
+          // Apply White Background Removal if enabled
+          if (removeWhiteCheckbox.checked) {
+            const tolerance = parseInt(whiteToleranceSlider.value) || 15;
+            for (let i = 0; i < rgba.length; i += 4) {
+              const r = rgba[i];
+              const g = rgba[i+1];
+              const b = rgba[i+2];
+              // Calculate distance to pure white
+              const diff = 255 - Math.min(r, g, b);
+              if (diff <= tolerance) {
+                if (tolerance === 0) {
+                  rgba[i+3] = 0;
+                } else {
+                  // Apply soft alpha transition to prevent jagged edges
+                  rgba[i+3] = Math.round((diff / tolerance) * 255);
+                }
+              }
+            }
+          }
+
+          item.dimensions = `${w} × ${h}`;
+          
+          if (ifds.length > 1) {
+            // Multipage detection badge
+            const badge = document.getElementById(`multipage-badge-${item.id}`);
+            if (badge) {
+              badge.className = 'badge-pages';
+              badge.textContent = `다중 페이지 (${ifds.length})`;
+            }
+          }
+
+          item.progress = 80;
+          updateUI();
+
+          // Create standard canvas for raw decoded data
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          const imgData = ctx.createImageData(w, h);
+          imgData.data.set(rgba);
+          ctx.putImageData(imgData, 0, 0);
+
+          // Get resizing configurations
+          let targetWidth = w;
+          let targetHeight = h;
+
+          if (sizeMode === 'custom') {
+            const maxWidth = parseInt(document.getElementById('max-width').value) || 2000;
+            const maxHeight = parseInt(document.getElementById('max-height').value) || 2000;
+            
+            // Calculate scale ratio preserving aspect ratio
+            const scale = Math.min(maxWidth / w, maxHeight / h);
+            if (scale < 1) { // Only resize if original is bigger
+              targetWidth = Math.round(w * scale);
+              targetHeight = Math.round(h * scale);
+            }
+          }
+
+          // 2. Export Canvas for styling (Background Color + Resizing)
+          const exportCanvas = document.createElement('canvas');
+          exportCanvas.width = targetWidth;
+          exportCanvas.height = targetHeight;
+          const exportCtx = exportCanvas.getContext('2d');
+
+          // Apply background settings
+          const bgType = bgTypeSelect.value;
+          if (bgType !== 'transparent') {
+            let fillColor = '#ffffff';
+            if (bgType === 'black') fillColor = '#000000';
+            else if (bgType === 'custom') fillColor = customBgColor.value;
+            
+            exportCtx.fillStyle = fillColor;
+            exportCtx.fillRect(0, 0, targetWidth, targetHeight);
+          }
+
+          // Draw the source canvas into destination (performs resampling if resized)
+          exportCtx.drawImage(canvas, 0, 0, w, h, 0, 0, targetWidth, targetHeight);
+
+          // Render thumbnail to DOM card
+          const thumbBox = document.getElementById(`thumb-${item.id}`);
+          if (thumbBox) {
+            thumbBox.innerHTML = '';
+            const previewImg = document.createElement('img');
+            
+            // Generate low-res data url for preview to save memory
+            // If the image is large, we scale down the thumbnail preview
+            const thumbCanvas = document.createElement('canvas');
+            thumbCanvas.width = 120;
+            thumbCanvas.height = 120;
+            const thumbCtx = thumbCanvas.getContext('2d');
+            const thumbScale = Math.min(120 / targetWidth, 120 / targetHeight);
+            const thumbW = targetWidth * thumbScale;
+            const thumbH = targetHeight * thumbScale;
+            
+            thumbCtx.drawImage(exportCanvas, 0, 0, targetWidth, targetHeight, (120 - thumbW)/2, (120 - thumbH)/2, thumbW, thumbH);
+            previewImg.src = thumbCanvas.toDataURL('image/png');
+            thumbBox.appendChild(previewImg);
+          }
+
+          // 3. Export as Blob
+          exportCanvas.toBlob((blob) => {
+            if (!blob) {
+              reject(new Error('PNG 블롭 생성 실패'));
+              return;
+            }
+
+            // Filename calculation
+            const originalName = file.name.substring(0, file.name.lastIndexOf('.'));
+            const suffix = document.getElementById('filename-suffix').value.trim();
+            const outputName = `${originalName}${suffix}.png`;
+
+            item.outputBlob = blob;
+            item.outputName = outputName;
+            item.status = 'success';
+            item.progress = 100;
+            
+            resolve();
+          }, 'image/png');
+
+        } catch (e) {
+          reject(e);
+        }
+      });
+    }
+
+    // Individual Download handler
+    function downloadSingleFile(id) {
+      const item = filesQueue.find(x => x.id === id);
+      if (!item || !item.outputBlob) return;
+
+      const url = URL.createObjectURL(item.outputBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = item.outputName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      showToast(`${item.outputName} 다운로드 시작`, 'success');
+    }
+
+    // Batch Download handler (Uses JSZip to zip files in memory)
+    async function downloadAllAsZip() {
+      const successfulItems = filesQueue.filter(x => x.selected && x.status === 'success' && x.outputBlob);
+      if (successfulItems.length === 0) {
+        showToast('다운로드할 선택된 변환 완료 파일이 없습니다.', 'warning');
+        return;
+      }
+
+      showToast('ZIP 압축 파일 생성 중...', 'info');
+      const zip = new JSZip();
+
+      successfulItems.forEach(item => {
+        zip.file(item.outputName, item.outputBlob);
+      });
+
+      try {
+        const zipBlob = await zip.generateAsync({ type: 'blob' }, (metadata) => {
+          // Can track zip generation progress here if needed
+        });
+
+        // Trigger ZIP file download
+        const url = URL.createObjectURL(zipBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'converted_pngs.zip';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showToast('ZIP 파일 다운로드가 시작되었습니다.', 'success');
+      } catch (err) {
+        showToast('ZIP 생성 실패: ' + err.message, 'error');
+      }
+    }
+
+    // ==========================================
+    // AI to PNG Converter logic functions
+    // ==========================================
+
+    function handleFilesSelectedAi(filesList) {
+      if (isConvertingAi) {
+        showToast('변환 진행 중에는 새 파일을 추가할 수 없습니다.', 'warning');
+        return;
+      }
+
+      const validFiles = Array.from(filesList).filter(file => {
+        const ext = file.name.split('.').pop().toLowerCase();
+        return ext === 'ai';
+      });
+
+      if (validFiles.length === 0) {
+        showToast('AI 파일만 지원합니다.', 'error');
+        return;
+      }
+
+      validFiles.forEach(file => {
+        // Prevent duplicates
+        if (filesQueueAi.some(item => item.file.name === file.name && item.file.size === file.size)) {
+          return; 
+        }
+
+        const id = 'ai_' + Math.random().toString(36).substr(2, 9);
+        
+        // Push a loading temporary item
+        const loadingItem = {
+          id: id,
+          file: file,
+          status: 'decoding',
+          progress: 10,
+          dimensions: '대지 분석 중...',
+          outputBlob: null,
+          outputName: '',
+          error: '',
+          selected: true,
+          pageNumber: 1,
+          totalPages: 1,
+          isLoadingMeta: true
+        };
+        filesQueueAi.push(loadingItem);
+        updateUIAi();
+
+        // Load page count asynchronously
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+          try {
+            const arrayBuffer = e.target.result;
+            const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+            const pdf = await loadingTask.promise;
+            
+            // Remove temporary loading item
+            filesQueueAi = filesQueueAi.filter(item => item.id !== id);
+            
+            // Push item for each page
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+              const pageId = 'ai_' + Math.random().toString(36).substr(2, 9);
+              
+              const page = await pdf.getPage(pageNum);
+              const viewport = page.getViewport({ scale: 1.0 });
+              const w = Math.round(viewport.width);
+              const h = Math.round(viewport.height);
+              
+              filesQueueAi.push({
+                id: pageId,
+                file: file,
+                pageNumber: pageNum,
+                totalPages: pdf.numPages,
+                status: 'pending',
+                progress: 0,
+                dimensions: `${w} × ${h} pt`,
+                outputBlob: null,
+                outputName: '',
+                error: '',
+                selected: true
+              });
+            }
+            updateUIAi();
+          } catch (err) {
+            console.error(err);
+            const item = filesQueueAi.find(x => x.id === id);
+            if (item) {
+              item.status = 'error';
+              item.error = 'AI 파일(PDF 호환) 분석 실패';
+              item.isLoadingMeta = false;
+              updateUIAi();
+            }
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      });
+
+      showToast(`${validFiles.length}개의 AI 파일 대기열 추가 시도 중...`, 'info');
+    }
+
+    function updateUIAi() {
+      const queueList = document.getElementById('queue-list-ai');
+      const emptyState = document.getElementById('empty-state-ai');
+      const queueCount = document.getElementById('queue-count-ai');
+      const btnStartConvert = document.getElementById('btn-start-convert-ai');
+      const btnClearCompleted = document.getElementById('btn-clear-completed-ai');
+      const btnClearAll = document.getElementById('btn-clear-all-ai');
+      const btnDownloadZip = document.getElementById('btn-download-zip-ai');
+
+      queueCount.textContent = filesQueueAi.length;
+
+      if (filesQueueAi.length === 0) {
+        emptyState.style.display = 'flex';
+        Array.from(queueList.querySelectorAll('.queue-card')).forEach(card => card.remove());
+        
+        btnStartConvert.disabled = true;
+        btnClearCompleted.disabled = true;
+        btnClearAll.disabled = true;
+        btnDownloadZip.disabled = true;
+
+        updateGlobalProgressAi(0, 0, 0);
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      
+      filesQueueAi.forEach(item => {
+        let card = document.getElementById(item.id);
+        if (!card) {
+          card = createQueueCardAi(item);
+          queueList.appendChild(card);
+        } else {
+          updateQueueCardUIAi(card, item);
+        }
+      });
+
+      Array.from(queueList.querySelectorAll('.queue-card')).forEach(card => {
+        const id = card.id;
+        if (!filesQueueAi.some(item => item.id === id)) {
+          card.remove();
+        }
+      });
+
+      const hasCompleted = filesQueueAi.some(item => item.status === 'success');
+      const hasPending = filesQueueAi.some(item => item.status === 'pending');
+      const selectedSuccessCount = filesQueueAi.filter(item => item.selected && item.status === 'success').length;
+
+      btnStartConvert.disabled = !hasPending || isConvertingAi;
+      btnClearCompleted.disabled = !hasCompleted || isConvertingAi;
+      btnClearAll.disabled = isConvertingAi;
+      btnDownloadZip.disabled = selectedSuccessCount === 0 || isConvertingAi;
+
+      btnDownloadZip.innerHTML = `
+        <svg style="width:16px; height:16px; fill:currentColor;" viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+        선택 ZIP 다운로드 (${selectedSuccessCount}개)
+      `;
+
+      updateSelectAllCheckboxStateAi();
+
+      const total = filesQueueAi.length;
+      const successCount = filesQueueAi.filter(item => item.status === 'success').length;
+      const failedCount = filesQueueAi.filter(item => item.status === 'error').length;
+      
+      let statusStr = '대기 중';
+      if (isConvertingAi) {
+        statusStr = '변환 중...';
+      } else if (successCount + failedCount === total) {
+        statusStr = '변환 작업 종료';
+      }
+      
+      document.getElementById('progress-status-text-ai').textContent = `상태: ${statusStr} | 완료: ${successCount} | 실패: ${failedCount}`;
+      document.getElementById('progress-percent-text-ai').textContent = `${Math.round((successCount + failedCount) / total * 100)}% (${successCount + failedCount}/${total})`;
+      
+      const percent = (successCount + failedCount) / total * 100;
+      updateGlobalProgressAi(percent, successCount, total);
+    }
+
+    function updateGlobalProgressAi(percent, completed, total) {
+      document.getElementById('global-progress-fill-ai').style.width = `${percent}%`;
+    }
+
+    function toggleItemSelectionAi(id, checked) {
+      const item = filesQueueAi.find(x => x.id === id);
+      if (item) {
+        item.selected = checked;
+      }
+      updateUIAi();
+    }
+
+    function toggleSelectAllAi(masterCheckbox) {
+      const checked = masterCheckbox.checked;
+      filesQueueAi.forEach(item => {
+        item.selected = checked;
+        const chk = document.getElementById(`chk-${item.id}`);
+        if (chk) chk.checked = checked;
+      });
+      updateUIAi();
+    }
+
+    function updateSelectAllCheckboxStateAi() {
+      const masterCheckbox = document.getElementById('select-all-queue-ai');
+      if (!masterCheckbox) return;
+      
+      const allSelected = filesQueueAi.length > 0 && filesQueueAi.every(item => item.selected);
+      const noneSelected = filesQueueAi.length === 0 || filesQueueAi.every(item => !item.selected);
+      
+      masterCheckbox.checked = allSelected;
+      masterCheckbox.indeterminate = !allSelected && !noneSelected;
+    }
+
+    function createQueueCardAi(item) {
+      const card = document.createElement('div');
+      card.className = 'queue-card';
+      card.id = item.id;
+
+      card.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: center;">
+          <input type="checkbox" id="chk-${item.id}" ${item.selected ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer;" onchange="toggleItemSelectionAi('${item.id}', this.checked)">
+        </div>
+        <div class="thumbnail-box" id="thumb-${item.id}">
+          <svg style="width:24px; height:24px; fill:rgba(255,255,255,0.25);" viewBox="0 0 24 24">
+            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-1 16H6c-.55 0-1-.45-1-1V6c0-.55.45-1 1-1h12c.55 0 1 .45 1 1v12c0 .55-.45 1-1 1zm-4.5-9L11 11.5 9 9l-3 4h12l-4.5-3z"/>
+          </svg>
+        </div>
+        <div class="file-meta">
+          <div class="file-name" title="${item.file.name}">${item.file.name}</div>
+          <div class="file-stats">
+            <span class="file-size">${formatBytes(item.file.size)}</span>
+            <span class="file-resolution" id="res-${item.id}">${item.dimensions}</span>
+            <span class="badge-pages" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">대지 ${item.pageNumber}/${item.totalPages}</span>
+          </div>
+        </div>
+        <div class="file-status-col">
+          <div class="status-text pending" id="status-text-${item.id}">대기 중</div>
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progress-fill-${item.id}"></div>
+          </div>
+        </div>
+        <div class="card-actions" id="actions-${item.id}">
+          <button class="btn-icon btn-icon-danger" onclick="removeFileAi('${item.id}')" title="삭제">
+            <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          </button>
+        </div>
+      `;
+
+      return card;
+    }
+
+    function updateQueueCardUIAi(card, item) {
+      card.classList.remove('processing', 'success', 'error');
+      
+      const statusText = document.getElementById(`status-text-${item.id}`);
+      const progressFill = document.getElementById(`progress-fill-${item.id}`);
+      const resText = document.getElementById(`res-${item.id}`);
+      const actionsDiv = document.getElementById(`actions-${item.id}`);
+      
+      progressFill.style.width = `${item.progress}%`;
+
+      if (item.dimensions) {
+        resText.textContent = item.dimensions;
+      }
+
+      if (item.status === 'pending') {
+        card.classList.add('pending');
+        statusText.className = 'status-text pending';
+        statusText.textContent = '대기 중';
+      } else if (item.status === 'decoding') {
+        card.classList.add('processing');
+        statusText.className = 'status-text decoding';
+        statusText.textContent = 'AI 분석/렌더링 중...';
+      } else if (item.status === 'converting') {
+        card.classList.add('processing');
+        statusText.className = 'status-text converting';
+        statusText.textContent = 'PNG로 가공 중...';
+      } else if (item.status === 'success') {
+        card.classList.add('success');
+        statusText.className = 'status-text success';
+        statusText.textContent = '완료';
+        
+        actionsDiv.innerHTML = `
+          <button class="btn-icon btn-icon-success" onclick="downloadSingleFileAi('${item.id}')" title="PNG 다운로드">
+            <svg viewBox="0 0 24 24"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+          </button>
+          <button class="btn-icon btn-icon-danger" onclick="removeFileAi('${item.id}')" title="삭제">
+            <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+          </button>
+        `;
+      } else if (item.status === 'error') {
+        card.classList.add('error');
+        statusText.className = 'status-text error';
+        statusText.textContent = item.error || '에러 발생';
+      }
+    }
+
+    function removeFileAi(id) {
+      if (isConvertingAi) return;
+      filesQueueAi = filesQueueAi.filter(item => item.id !== id);
+      updateUIAi();
+    }
+
+    function clearCompletedAi() {
+      if (isConvertingAi) return;
+      filesQueueAi = filesQueueAi.filter(item => item.status !== 'success');
+      updateUIAi();
+    }
+
+    function clearAllAi() {
+      if (isConvertingAi) return;
+      filesQueueAi = [];
+      updateUIAi();
+    }
+
+    async function startBatchConversionAi() {
+      if (isConvertingAi) return;
+      
+      const pendingItems = filesQueueAi.filter(item => item.status === 'pending');
+      if (pendingItems.length === 0) return;
+
+      isConvertingAi = true;
+      cancelRequestedAi = false;
+      
+      updateUIAi();
+
+      for (let item of pendingItems) {
+        if (cancelRequestedAi) {
+          break;
+        }
+
+        try {
+          await convertSingleAi(item);
+        } catch (err) {
+          console.error(err);
+          item.status = 'error';
+          item.error = err.message || '변환 오류';
+        }
+        
+        updateUIAi();
+      }
+
+      isConvertingAi = false;
+      updateUIAi();
+      showToast('모든 AI 변환 프로세스가 완료되었습니다.', 'success');
+    }
+
+    function convertSingleAi(item) {
+      return new Promise(async (resolve, reject) => {
+        try {
+          item.status = 'decoding';
+          item.progress = 20;
+          updateUIAi();
+
+          const file = item.file;
+          const arrayBuffer = await file.arrayBuffer();
+          
+          item.progress = 40;
+          updateUIAi();
+
+          // Load PDF
+          const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+          const pdf = await loadingTask.promise;
+          
+          item.status = 'converting';
+          item.progress = 60;
+          updateUIAi();
+
+          // Get specific page
+          const page = await pdf.getPage(item.pageNumber);
+          
+          // Calculate viewport with DPI (PDF standard: 72 points per inch)
+          const dpi = parseInt(document.getElementById('render-dpi-ai').value) || 150;
+          const scale = dpi / 72;
+          const viewport = page.getViewport({ scale: scale });
+          
+          const w = Math.round(viewport.width);
+          const h = Math.round(viewport.height);
+          
+          // Create canvas
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          
+          // Render page
+          const renderContext = {
+            canvasContext: ctx,
+            viewport: viewport
+          };
+          await page.render(renderContext).promise;
+
+          // Apply Chromakey if enabled
+          if (document.getElementById('remove-white-ai').checked) {
+            const imgData = ctx.getImageData(0, 0, w, h);
+            const rgba = imgData.data;
+            const tolerance = parseInt(document.getElementById('white-tolerance-ai').value) || 15;
+            for (let i = 0; i < rgba.length; i += 4) {
+              const r = rgba[i];
+              const g = rgba[i+1];
+              const b = rgba[i+2];
+              const diff = 255 - Math.min(r, g, b);
+              if (diff <= tolerance) {
+                if (tolerance === 0) {
+                  rgba[i+3] = 0;
+                } else {
+                  rgba[i+3] = Math.round((diff / tolerance) * 255);
+                }
+              }
+            }
+            ctx.putImageData(imgData, 0, 0);
+          }
+
+          item.dimensions = `${w} × ${h}`;
+          item.progress = 80;
+          updateUIAi();
+
+          // Apply Resizing settings
+          let targetWidth = w;
+          let targetHeight = h;
+
+          if (sizeModeAi === 'custom') {
+            const maxWidth = parseInt(document.getElementById('max-width-ai').value) || 2000;
+            const maxHeight = parseInt(document.getElementById('max-height-ai').value) || 2000;
+            
+            const scaleRatio = Math.min(maxWidth / w, maxHeight / h);
+            if (scaleRatio < 1) {
+              targetWidth = Math.round(w * scaleRatio);
+              targetHeight = Math.round(h * scaleRatio);
+            }
+          }
+
+          // Create export canvas for background filling and sizing
+          const exportCanvas = document.createElement('canvas');
+          exportCanvas.width = targetWidth;
+          exportCanvas.height = targetHeight;
+          const exportCtx = exportCanvas.getContext('2d');
+
+          // Apply background settings
+          const bgType = document.getElementById('bg-type-ai').value;
+          if (bgType !== 'transparent') {
+            let fillColor = '#ffffff';
+            if (bgType === 'black') fillColor = '#000000';
+            else if (bgType === 'custom') fillColor = document.getElementById('custom-bg-color-ai').value;
+            
+            exportCtx.fillStyle = fillColor;
+            exportCtx.fillRect(0, 0, targetWidth, targetHeight);
+          }
+
+          // Draw source canvas (handles resizing automatically)
+          exportCtx.drawImage(canvas, 0, 0, w, h, 0, 0, targetWidth, targetHeight);
+
+          // Render thumbnail
+          const thumbBox = document.getElementById(`thumb-${item.id}`);
+          if (thumbBox) {
+            thumbBox.innerHTML = '';
+            const previewImg = document.createElement('img');
+            
+            const thumbCanvas = document.createElement('canvas');
+            thumbCanvas.width = 120;
+            thumbCanvas.height = 120;
+            const thumbCtx = thumbCanvas.getContext('2d');
+            const thumbScale = Math.min(120 / targetWidth, 120 / targetHeight);
+            const thumbW = targetWidth * thumbScale;
+            const thumbH = targetHeight * thumbScale;
+            
+            thumbCtx.drawImage(exportCanvas, 0, 0, targetWidth, targetHeight, (120 - thumbW)/2, (120 - thumbH)/2, thumbW, thumbH);
+            previewImg.src = thumbCanvas.toDataURL('image/png');
+            thumbBox.appendChild(previewImg);
+          }
+
+          // Export as Blob
+          exportCanvas.toBlob((blob) => {
+            if (!blob) {
+              reject(new Error('PNG 블롭 생성 실패'));
+              return;
+            }
+
+            const originalName = file.name.substring(0, file.name.lastIndexOf('.'));
+            const suffix = document.getElementById('filename-suffix-ai').value.trim();
+            
+            let outputName = '';
+            if (item.totalPages > 1) {
+              outputName = `${originalName}_page${item.pageNumber}${suffix}.png`;
+            } else {
+              outputName = `${originalName}${suffix}.png`;
+            }
+
+            item.outputBlob = blob;
+            item.outputName = outputName;
+            item.status = 'success';
+            item.progress = 100;
+            
+            resolve();
+          }, 'image/png');
+
+        } catch (e) {
+          reject(e);
+        }
+      });
+    }
+
+    function downloadSingleFileAi(id) {
+      const item = filesQueueAi.find(x => x.id === id);
+      if (!item || !item.outputBlob) return;
+
+      const url = URL.createObjectURL(item.outputBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = item.outputName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      showToast(`${item.outputName} 다운로드 시작`, 'success');
+    }
+
+    async function downloadAllAsZipAi() {
+      const successfulItems = filesQueueAi.filter(x => x.selected && x.status === 'success' && x.outputBlob);
+      if (successfulItems.length === 0) {
+        showToast('다운로드할 선택된 변환 완료 파일이 없습니다.', 'warning');
+        return;
+      }
+
+      showToast('ZIP 압축 파일 생성 중...', 'info');
+      const zip = new JSZip();
+
+      successfulItems.forEach(item => {
+        zip.file(item.outputName, item.outputBlob);
+      });
+
+      try {
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+
+        const url = URL.createObjectURL(zipBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'converted_ai_pngs.zip';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showToast('ZIP 파일 다운로드가 시작되었습니다.', 'success');
+      } catch (err) {
+        showToast('ZIP 생성 실패: ' + err.message, 'error');
+      }
+    }
+  </script>
+</body>
+</html>
