@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnapLink - 프리미엄 URL 단축 서비스</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/png" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body>
+    <!-- Background Decorators -->
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">Snap<span>Link</span></span>
+            </div>
+            <p class="tagline">더 깔끔하게, 더 빠르게, 더 완벽하게 링크를 단축하세요.</p>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="app-main">
+            <!-- URL Shortener Form Section -->
+            <section class="card shorten-section">
+                <form id="shorten-form" novalidate>
+                    <div class="input-group">
+                        <label for="long-url" class="sr-only">단축할 긴 URL</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">🔗</span>
+                            <input 
+                                type="url" 
+                                id="long-url" 
+                                placeholder="단축할 긴 URL을 입력하세요 (예: https://example.com/...)" 
+                                required
+                                autocomplete="off"
+                            >
+                        </div>
+                        <button type="submit" id="submit-btn" class="btn btn-primary">
+                            <span>단축하기</span>
+                            <span class="btn-loader" hidden></span>
+                        </button>
+                    </div>
+
+                    <!-- Custom Code Expander -->
+                    <div class="advanced-settings">
+                        <button type="button" class="advanced-toggle" id="advanced-toggle">
+                            <span class="toggle-icon">▶</span>
+                            <span>고유 단축 코드 설정 (선택사항)</span>
+                        </button>
+                        <div class="advanced-content" id="advanced-content">
+                            <div class="custom-code-wrapper">
+                                <span class="prefix">shortmail/</span>
+                                <input 
+                                    type="text" 
+                                    id="custom-code" 
+                                    placeholder="my-custom-link" 
+                                    maxlength="20"
+                                    autocomplete="off"
+                                >
+                            </div>
+                            <small class="helper-text">3~20자의 영문, 숫자, 하이픈(-) 또는 언더바(_)만 가능합니다.</small>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Error Message Container -->
+                <div class="error-container" id="error-message" hidden></div>
+            </section>
+
+            <!-- Result Section (Shown dynamically after success) -->
+            <section class="card result-section" id="result-card" hidden>
+                <div class="result-header">
+                    <h3>🎉 단축 링크 생성 완료!</h3>
+                    <button type="button" class="close-btn" id="close-result-btn">&times;</button>
+                </div>
+                
+                <div class="result-body">
+                    <div class="short-url-box">
+                        <input type="text" id="shortened-url" readonly>
+                        <button type="button" class="btn btn-copy" id="copy-btn">
+                            <span class="copy-text">복사하기</span>
+                            <span class="copy-icon">📋</span>
+                        </button>
+                    </div>
+
+                    <div class="result-actions">
+                        <a href="#" target="_blank" id="visit-link" class="btn btn-secondary">
+                            <span>바로 방문하기</span>
+                            <span class="action-icon">🚀</span>
+                        </a>
+                        <button type="button" class="btn btn-secondary" id="qr-toggle-btn">
+                            <span>QR 코드 보기</span>
+                            <span class="action-icon">📱</span>
+                        </button>
+                    </div>
+
+                    <!-- QR Code Overlay Area -->
+                    <div class="qr-container" id="qr-container" hidden>
+                        <div class="qr-wrapper">
+                            <img src="" id="qr-code-img" alt="QR Code">
+                            <span class="qr-loader">Loading QR...</span>
+                        </div>
+                        <p class="qr-hint">QR 코드를 스캔하여 모바일에서 바로 접속하세요.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- History Section -->
+            <section class="history-section">
+                <div class="section-header">
+                    <h2>📋 나의 최근 단축 링크</h2>
+                    <button type="button" class="btn btn-text" id="clear-history-btn" hidden>기록 지우기</button>
+                </div>
+
+                <div class="card history-card">
+                    <div class="table-responsive">
+                        <table class="history-table" id="history-table">
+                            <thead>
+                                <tr>
+                                    <th>원본 링크</th>
+                                    <th>단축 링크</th>
+                                    <th class="text-center">클릭 수</th>
+                                    <th class="text-right">생성일</th>
+                                    <th class="text-center">관리</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-list">
+                                <!-- Dynamic entries go here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Empty state -->
+                    <div class="empty-state" id="empty-state">
+                        <div class="empty-icon">🔗</div>
+                        <p>아직 단축된 링크가 없습니다. 위에 긴 링크를 넣어보세요!</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>&copy; 2026 SnapLink. All rights reserved.</p>
+            <p class="footer-tech">Powered by Python</p>
+        </footer>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast-container" id="toast-container"></div>
+    <script src="app.js"></script>
+</body>
+</html>
