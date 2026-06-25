@@ -18,8 +18,8 @@ export async function onRequest(context) {
   let originalUrl = await env.DATABASE.get(dbKey);
   let matchedKey = dbKey;
 
-  // Local development fallback
-  if (!originalUrl && (host === 'localhost' || host === '127.0.0.1')) {
+  // Local development or default pages.dev fallback
+  if (!originalUrl && (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.pages.dev'))) {
     const ALLOWED_DOMAINS = ['s.careerup.kr', 's.myown.kr', 's.solcompany.kr'];
     for (const d of ALLOWED_DOMAINS) {
       const fallbackKey = `${d}:${code}`;
