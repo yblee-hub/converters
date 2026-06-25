@@ -26,6 +26,10 @@ function generateShortCode() {
 export async function onRequestPost(context) {
   const { request, env } = context;
 
+  if (!env.DATABASE) {
+    return jsonResponse({ error: 'Database binding (DATABASE) is missing.' }, 500);
+  }
+
   try {
     const reqBody = await request.json();
     const { url, customCode, domain } = reqBody;

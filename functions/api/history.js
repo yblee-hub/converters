@@ -8,6 +8,10 @@ function jsonResponse(data, status = 200) {
 export async function onRequestGet(context) {
   const { env } = context;
 
+  if (!env.DATABASE) {
+    return jsonResponse({ error: 'Database binding (DATABASE) is missing.' }, 500);
+  }
+
   try {
     // List keys in the KV namespace (default limit is 1000)
     const listResult = await env.DATABASE.list();

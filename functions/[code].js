@@ -15,6 +15,11 @@ export async function onRequest(context) {
   // Database Key (domain:code)
   const dbKey = `${host}:${code}`;
   
+  // Safe check if KV DATABASE is bound (prevents crash on Projects without KV binding)
+  if (!env.DATABASE) {
+    return await next();
+  }
+  
   let originalUrl = await env.DATABASE.get(dbKey);
   let matchedKey = dbKey;
 

@@ -8,6 +8,10 @@ function jsonResponse(data, status = 200) {
 export async function onRequestPost(context) {
   const { request, env } = context;
 
+  if (!env.DATABASE) {
+    return jsonResponse({ error: 'Database binding (DATABASE) is missing.' }, 500);
+  }
+
   try {
     const reqBody = await request.json();
     const { keys } = reqBody;
