@@ -27,54 +27,161 @@
 
         <!-- Main Workspace -->
         <main class="app-main">
-            <!-- URL Shortener Form Section -->
-            <section class="card shorten-section">
-                <form id="shorten-form" novalidate>
-                    <div class="input-group">
-                        <label for="long-url" class="sr-only">단축할 긴 URL</label>
-                        <div class="input-wrapper">
-                            <span class="input-icon">🔗</span>
-                            <input 
-                                type="url" 
-                                id="long-url" 
-                                placeholder="단축할 긴 URL을 입력하세요 (예: https://example.com/...)" 
-                                required
-                                autocomplete="off"
-                            >
-                        </div>
-                        <button type="submit" id="submit-btn" class="btn btn-primary">
-                            <span>단축하기</span>
-                            <span class="btn-loader" hidden></span>
-                        </button>
-                    </div>
+            <!-- Tabs for Mode Selection -->
+            <div class="tabs-container">
+                <button type="button" class="tab-btn active" id="tab-single">
+                    <span>단일 단축</span>
+                </button>
+                <button type="button" class="tab-btn" id="tab-bulk">
+                    <span>대량 단축 (엑셀 붙여넣기)</span>
+                </button>
+            </div>
 
-                    <!-- Custom Code Expander -->
-                    <div class="advanced-settings">
-                        <button type="button" class="advanced-toggle" id="advanced-toggle">
-                            <span class="toggle-icon">▶</span>
-                            <span>고유 단축 코드 설정 (선택사항)</span>
-                        </button>
-                        <div class="advanced-content" id="advanced-content">
-                            <div class="custom-code-wrapper">
-                                <span class="prefix">shortmail/</span>
+            <!-- Single Shorten Panel -->
+            <div id="single-panel">
+                <!-- URL Shortener Form Section -->
+                <section class="card shorten-section">
+                    <form id="shorten-form" novalidate>
+                        <div class="input-group">
+                            <label for="long-url" class="sr-only">단축할 긴 URL</label>
+                            <div class="input-wrapper">
+                                <span class="input-icon">🔗</span>
                                 <input 
-                                    type="text" 
-                                    id="custom-code" 
-                                    placeholder="my-custom-link" 
-                                    maxlength="20"
+                                    type="url" 
+                                    id="long-url" 
+                                    placeholder="단축할 긴 URL을 입력하세요 (예: https://example.com/...)" 
+                                    required
                                     autocomplete="off"
                                 >
                             </div>
-                            <small class="helper-text">3~20자의 영문, 숫자, 하이픈(-) 또는 언더바(_)만 가능합니다.</small>
+                            <button type="submit" id="submit-btn" class="btn btn-primary">
+                                <span>단축하기</span>
+                                <span class="btn-loader" hidden></span>
+                            </button>
+                        </div>
+
+                        <!-- Custom Code Expander -->
+                        <div class="advanced-settings">
+                            <button type="button" class="advanced-toggle" id="advanced-toggle">
+                                <span class="toggle-icon">▶</span>
+                                <span>도메인 및 고유 단축 코드 설정 (선택사항)</span>
+                            </button>
+                            <div class="advanced-content" id="advanced-content">
+                                <div class="custom-code-wrapper">
+                                    <select id="domain-select" class="domain-select-inline">
+                                        <option value="s.careerup.kr">s.careerup.kr</option>
+                                        <option value="s.myown.kr">s.myown.kr</option>
+                                        <option value="s.solcompany.kr">s.solcompany.kr</option>
+                                    </select>
+                                    <span class="separator">/</span>
+                                    <input 
+                                        type="text" 
+                                        id="custom-code" 
+                                        placeholder="my-custom-link" 
+                                        maxlength="20"
+                                        autocomplete="off"
+                                    >
+                                </div>
+                                <small class="helper-text">3~20자의 영문, 숫자, 하이픈(-) 또는 언더바(_)만 가능합니다.</small>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Error Message Container -->
+                    <div class="error-container" id="error-message" hidden></div>
+                </section>
+            </div>
+
+            <!-- Bulk Shorten Panel (Hidden by default) -->
+            <div id="bulk-panel" hidden>
+                <section class="card shorten-section">
+                    <div class="bulk-input-container">
+                        <label for="bulk-paste-area" class="bulk-label">엑셀/스프레드시트에서 데이터를 복사하여 붙여넣으세요.</label>
+                        <p class="bulk-hint">각 행의 첫 번째 열은 원본 URL, 두 번째 열은 단축 코드(선택사항)로 인식됩니다. (탭 또는 쉼표 구분)</p>
+                        <textarea 
+                            id="bulk-paste-area" 
+                            placeholder="예시 (Original URL과 Custom Code):&#13;https://example.com/link1	custom-code-1&#13;https://example.com/link2	custom-code-2&#13;https://example.com/link3"
+                            rows="6"
+                        ></textarea>
+                        <div class="bulk-actions-top">
+                            <button type="button" id="btn-parse-bulk" class="btn btn-primary">
+                                <span>표 파싱하여 검토하기</span>
+                            </button>
+                            <button type="button" id="btn-clear-bulk" class="btn btn-secondary">초기화</button>
                         </div>
                     </div>
-                </form>
 
-                <!-- Error Message Container -->
-                <div class="error-container" id="error-message" hidden></div>
-            </section>
+                    <!-- Dynamic Review Grid (hidden until parsed) -->
+                    <div class="bulk-review-container" id="bulk-review-container" hidden>
+                        <div class="bulk-review-header">
+                            <h4>📋 대량 변환 링크 검토</h4>
+                            <div class="bulk-global-domain">
+                                <label for="bulk-domain-all">전체 도메인 적용:</label>
+                                <select id="bulk-domain-all" class="form-select-sm">
+                                    <option value="s.careerup.kr">s.careerup.kr</option>
+                                    <option value="s.myown.kr">s.myown.kr</option>
+                                    <option value="s.solcompany.kr">s.solcompany.kr</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="table-responsive bulk-table-wrapper">
+                            <table class="bulk-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 60px;">번호</th>
+                                        <th>원본 URL (필수)</th>
+                                        <th style="width: 200px;">도메인</th>
+                                        <th style="width: 220px;">고유 단축 코드 (선택)</th>
+                                        <th style="width: 70px;" class="text-center">삭제</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bulk-review-list">
+                                    <!-- Dynamic rows go here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="bulk-table-actions">
+                            <button type="button" id="btn-add-bulk-row" class="btn btn-secondary-sm">+ 행 추가</button>
+                            <button type="button" id="bulk-submit-btn" class="btn btn-primary">
+                                <span>대량 단축 링크 생성</span>
+                                <span class="btn-loader" hidden></span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
 
-            <!-- Result Section (Shown dynamically after success) -->
+                <!-- Bulk Result Display (hidden until success) -->
+                <section class="card result-section" id="bulk-result-card" hidden>
+                    <div class="result-header">
+                        <h3>🎉 대량 단축 생성 완료!</h3>
+                        <button type="button" class="close-btn" id="close-bulk-result-btn">&times;</button>
+                    </div>
+                    <div class="result-body">
+                        <p class="result-hint">생성 완료된 링크 목록입니다. 하단의 복사 버튼을 눌러 엑셀에 바로 붙여넣으세요.</p>
+                        <div class="table-responsive bulk-result-wrapper">
+                            <table class="bulk-result-table">
+                                <thead>
+                                    <tr>
+                                        <th>원본 URL</th>
+                                        <th>단축 URL</th>
+                                        <th style="width: 100px;" class="text-center">상태</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bulk-result-list">
+                                    <!-- Generated rows will be appended here -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="bulk-result-actions" style="margin-top: 1.5rem; display: flex; gap: 1rem;">
+                            <button type="button" class="btn btn-primary" id="btn-copy-bulk-tsv">
+                                <span>엑셀 복사용 복사 (TSV) 📋</span>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Result Section (Shown dynamically after success for Single mode) -->
             <section class="card result-section" id="result-card" hidden>
                 <div class="result-header">
                     <h3>🎉 단축 링크 생성 완료!</h3>
@@ -115,8 +222,14 @@
             <!-- History Section -->
             <section class="history-section">
                 <div class="section-header">
-                    <h2>📋 나의 최근 단축 링크</h2>
-                    <button type="button" class="btn btn-text" id="clear-history-btn" hidden>기록 지우기</button>
+                    <h2>📋 전체 단축 링크 관리</h2>
+                    <div class="header-actions" style="display: flex; gap: 0.8rem; align-items: center;">
+                        <div class="bulk-delete-bar" id="bulk-delete-bar" hidden style="display: flex; gap: 0.8rem; align-items: center; background: rgba(239, 68, 68, 0.1); padding: 0.4rem 0.8rem; border-radius: 6px; border: 1px dashed rgba(239, 68, 68, 0.3);">
+                            <span class="selected-count" style="font-size: 0.9rem; color: #ef4444; font-weight: 500;">선택된 항목: <strong id="selected-count-val">0</strong>개</span>
+                            <button type="button" class="btn btn-danger-sm" id="btn-delete-selected">선택 삭제 🗑️</button>
+                        </div>
+                        <button type="button" class="btn btn-text" id="clear-history-btn" hidden>전체 기록 지우기</button>
+                    </div>
                 </div>
 
                 <div class="card history-card">
@@ -124,11 +237,14 @@
                         <table class="history-table" id="history-table">
                             <thead>
                                 <tr>
+                                    <th style="width: 40px;" class="text-center">
+                                        <input type="checkbox" id="select-all-history">
+                                    </th>
                                     <th>원본 링크</th>
                                     <th>단축 링크</th>
-                                    <th class="text-center">클릭 수</th>
-                                    <th class="text-right">생성일</th>
-                                    <th class="text-center">관리</th>
+                                    <th class="text-center" style="width: 90px;">클릭 수</th>
+                                    <th class="text-right" style="width: 110px;">생성일</th>
+                                    <th class="text-center" style="width: 100px;">관리</th>
                                 </tr>
                             </thead>
                             <tbody id="history-list">

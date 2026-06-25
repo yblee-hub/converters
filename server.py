@@ -11,6 +11,7 @@ from datetime import datetime
 PORT = 3000
 DATA_FILE = 'data.json'
 RESERVED_PATHS = {'api', 'public', 'index.html', 'style.css', 'app.js', 'favicon.ico'}
+ALLOWED_DOMAINS = ['s.careerup.kr', 's.myown.kr', 's.solcompany.kr']
 
 def get_local_ip():
     try:
@@ -106,25 +107,25 @@ class ShortenerHandler(SimpleHTTPRequestHandler):
                 self.end_headers()
                 
                 database = load_data()
-                proto = 'http'
-                if BASE_URL:
-                    base_url = BASE_URL
-                else:
-                    local_ip = get_local_ip()
-                    base_url = f'{proto}://{local_ip}:{PORT}'
-                
                 history = []
-                for code, info in database.items():
+                for db_key, info in database.items():
+                    domain = 's.careerup.kr'
+                    code = db_key
+                    if ':' in db_key:
+                        domain, code = db_key.split(':', 1)
+                    
                     history.append({
+                        'domain': domain,
                         'shortCode': code,
-                        'shortUrl': f'{base_url}/{code}',
+                        'shortUrl': f'https://{domain}/{code}',
                         'originalUrl': info['originalUrl'],
                         'clicks': info['clicks'],
-                        'createdAt': info['createdAt']
+                        'createdAt': info['createdAt'],
+                        'dbKey': db_key
                     })
                 
                 # Sort by createdAt desc
-                history.sort(key=lambda x: x['createdAt'], reverse=True)
+                history.sort(key=lambda x: x.get('createdAt', ''), reverse=True)
                 self.wfile.write(json.dumps(history).encode('utf-8'))
                 return
 
@@ -133,7 +134,25 @@ class ShortenerHandler(SimpleHTTPRequestHandler):
                 code = path_parts[2]
                 print(f"[debug] Match GET /api/stats/{code}")
                 database = load_data()
-                if code not in database:
+                
+                info = None
+                domain = 's.careerup.kr'
+                db_key = None
+                
+                # legacy check
+                if code in database:
+                    info = database[code]
+                    db_key = code
+                else:
+                    for d in ALLOWED_DOMAINS:
+                        k = f"{d}:{code}"
+                        if k in database:
+                            info = database[k]
+                            domain = d
+                            db_key = k
+                            break
+
+                if not info:
                     self.send_response(404)
                     self.send_header('Content-Type', 'application/json')
                     self.end_headers()
@@ -144,20 +163,14 @@ class ShortenerHandler(SimpleHTTPRequestHandler):
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
                 
-                proto = 'http'
-                if BASE_URL:
-                    base_url = BASE_URL
-                else:
-                    local_ip = get_local_ip()
-                    base_url = f'{proto}://{local_ip}:{PORT}'
-                
-                info = database[code]
                 self.wfile.write(json.dumps({
+                    'domain': domain,
                     'shortCode': code,
-                    'shortUrl': f'{base_url}/{code}',
+                    'shortUrl': f'https://{domain}/{code}',
                     'originalUrl': info['originalUrl'],
                     'clicks': info['clicks'],
-                    'createdAt': info['createdAt']
+                    'createdAt': info['createdAt'],
+                    'dbKey': db_key
                 }).encode('utf-8'))
                 return
 
@@ -167,14 +180,39 @@ class ShortenerHandler(SimpleHTTPRequestHandler):
                 print(f"[debug] Match Redirect GET /{code}")
                 database = load_data()
                 
-                if code in database:
+                # Determine host
+                host_header = self.headers.get('Host', '')
+                host = host_header.split(':')[0].lower()
+                db_key = f"{host}:{code}"
+                
+                redirect_url = None
+                matched_key = None
+                
+                if db_key in database:
+                    redirect_url = database[db_key]['originalUrl']
+                    matched_key = db_key
+                elif host in ('localhost', '127.0.0.1') or host.startswith('192.168.') or host.startswith('10.') or host.startswith('172.'):
+                    # Fallback for local testing
+                    for d in ALLOWED_DOMAINS:
+                        k = f"{d}:{code}"
+                        if k in database:
+                            redirect_url = database[k]['originalUrl']
+                            matched_key = k
+                            break
+                            
+                # Legacy fallback
+                if not redirect_url and code in database:
+                    redirect_url = database[code]['originalUrl']
+                    matched_key = code
+                
+                if redirect_url:
                     # Increment click count
-                    database[code]['clicks'] += 1
+                    database[matched_key]['clicks'] += 1
                     save_data(database)
                     
                     # Redirect
                     self.send_response(302)
-                    self.send_header('Location', database[code]['originalUrl'])
+                    self.send_header('Location', redirect_url)
                     self.end_headers()
                     return
                 else:
@@ -220,6 +258,7 @@ class ShortenerHandler(SimpleHTTPRequestHandler):
 
                 url = req_body.get('url')
                 custom_code = req_body.get('customCode')
+                domain = req_body.get('domain', 's.careerup.kr')
 
                 if not url:
                     self.send_response(400)
@@ -233,6 +272,13 @@ class ShortenerHandler(SimpleHTTPRequestHandler):
                     self.send_header('Content-Type', 'application/json')
                     self.end_headers()
                     self.wfile.write(json.dumps({'error': 'Please enter a valid URL (must start with http:// or https://).'}).encode('utf-8'))
+                    return
+
+                if domain not in ALLOWED_DOMAINS:
+                    self.send_response(400)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({'error': 'Invalid domain selected.'}).encode('utf-8'))
                     return
 
                 database = load_data()
@@ -254,29 +300,33 @@ class ShortenerHandler(SimpleHTTPRequestHandler):
                         self.wfile.write(json.dumps({'error': 'This custom code is reserved.'}).encode('utf-8'))
                         return
 
-                    if code in database:
+                    db_key = f"{domain}:{code}"
+                    if db_key in database:
                         self.send_response(400)
                         self.send_header('Content-Type', 'application/json')
                         self.end_headers()
-                        self.wfile.write(json.dumps({'error': 'This custom code is already in use.'}).encode('utf-8'))
+                        self.wfile.write(json.dumps({'error': 'This custom code is already in use for this domain.'}).encode('utf-8'))
                         return
                 else:
                     # Generate unique code
                     attempts = 0
+                    db_key = None
                     while attempts < 100:
                         code = generate_short_code()
-                        if code not in database:
+                        db_key = f"{domain}:{code}"
+                        if db_key not in database:
                             break
                         attempts += 1
                     
-                    if code in database:
+                    if db_key in database:
                         self.send_response(500)
                         self.send_header('Content-Type', 'application/json')
                         self.end_headers()
                         self.wfile.write(json.dumps({'error': 'Failed to generate a unique short code.'}).encode('utf-8'))
                         return
 
-                database[code] = {
+                db_key = f"{domain}:{code}"
+                database[db_key] = {
                     'originalUrl': url,
                     'clicks': 0,
                     'createdAt': datetime.utcnow().isoformat() + 'Z'
@@ -287,21 +337,155 @@ class ShortenerHandler(SimpleHTTPRequestHandler):
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
                 
-                proto = 'http'
-                if BASE_URL:
-                    base_url = BASE_URL
-                else:
-                    local_ip = get_local_ip()
-                    base_url = f'{proto}://{local_ip}:{PORT}'
-                short_url = f'{base_url}/{code}'
-                
+                short_url = f'https://{domain}/{code}'
                 self.wfile.write(json.dumps({
+                    'domain': domain,
                     'shortCode': code,
                     'shortUrl': short_url,
                     'originalUrl': url,
                     'clicks': 0,
-                    'createdAt': database[code]['createdAt']
+                    'createdAt': database[db_key]['createdAt'],
+                    'dbKey': db_key
                 }).encode('utf-8'))
+                return
+
+            # Case 2: POST /api/shorten-batch
+            elif len(path_parts) == 2 and path_parts[0] == 'api' and path_parts[1] == 'shorten-batch':
+                print("[debug] Match POST /api/shorten-batch")
+                content_length = int(self.headers.get('Content-Length', 0))
+                post_data = self.rfile.read(content_length)
+                
+                try:
+                    req_body = json.loads(post_data.decode('utf-8'))
+                except Exception:
+                    self.send_response(400)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({'error': 'Invalid JSON body.'}).encode('utf-8'))
+                    return
+
+                items = req_body.get('items', [])
+                if not isinstance(items, list):
+                    self.send_response(400)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({'error': 'items must be a list.'}).encode('utf-8'))
+                    return
+
+                database = load_data()
+                results = []
+                updated = False
+
+                for item in items:
+                    url = item.get('url')
+                    domain = item.get('domain', 's.careerup.kr')
+                    custom_code = item.get('customCode')
+
+                    if not url:
+                        results.append({'success': False, 'error': 'URL is required.', 'originalUrl': url})
+                        continue
+
+                    if not is_valid_url(url):
+                        results.append({'success': False, 'error': 'Invalid URL format (must start with http:// or https://).', 'originalUrl': url})
+                        continue
+
+                    if domain not in ALLOWED_DOMAINS:
+                        results.append({'success': False, 'error': 'Invalid domain.', 'originalUrl': url})
+                        continue
+
+                    code = custom_code.strip() if custom_code else ''
+                    db_key = None
+
+                    if code:
+                        if not re.match(r'^[a-zA-Z0-9_-]{3,20}$', code):
+                            results.append({'success': False, 'error': 'Code must be 3-20 letters/numbers/hyphens/underscores.', 'originalUrl': url, 'customCode': code})
+                            continue
+                        if code.lower() in RESERVED_PATHS:
+                            results.append({'success': False, 'error': 'Reserved custom code.', 'originalUrl': url, 'customCode': code})
+                            continue
+                        db_key = f"{domain}:{code}"
+                        if db_key in database:
+                            results.append({'success': False, 'error': 'Code already in use for this domain.', 'originalUrl': url, 'customCode': code})
+                            continue
+                    else:
+                        attempts = 0
+                        while attempts < 100:
+                            code = generate_short_code()
+                            db_key = f"{domain}:{code}"
+                            if db_key not in database:
+                                break
+                            attempts += 1
+                        
+                        if db_key in database:
+                            results.append({'success': False, 'error': 'Failed to generate unique code.', 'originalUrl': url})
+                            continue
+
+                    db_key = f"{domain}:{code}"
+                    database[db_key] = {
+                        'originalUrl': url,
+                        'clicks': 0,
+                        'createdAt': datetime.utcnow().isoformat() + 'Z'
+                    }
+                    updated = True
+
+                    results.append({
+                        'success': True,
+                        'domain': domain,
+                        'shortCode': code,
+                        'shortUrl': f'https://{domain}/{code}',
+                        'originalUrl': url,
+                        'clicks': 0,
+                        'createdAt': database[db_key]['createdAt'],
+                        'dbKey': db_key
+                    })
+
+                if updated:
+                    save_data(database)
+
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'results': results}).encode('utf-8'))
+                return
+
+            # Case 3: POST /api/delete-batch
+            elif len(path_parts) == 2 and path_parts[0] == 'api' and path_parts[1] == 'delete-batch':
+                print("[debug] Match POST /api/delete-batch")
+                content_length = int(self.headers.get('Content-Length', 0))
+                post_data = self.rfile.read(content_length)
+                
+                try:
+                    req_body = json.loads(post_data.decode('utf-8'))
+                except Exception:
+                    self.send_response(400)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({'error': 'Invalid JSON body.'}).encode('utf-8'))
+                    return
+
+                keys = req_body.get('keys', [])
+                if not isinstance(keys, list):
+                    self.send_response(400)
+                    self.send_header('Content-Type', 'application/json')
+                    self.end_headers()
+                    self.wfile.write(json.dumps({'error': 'keys must be a list.'}).encode('utf-8'))
+                    return
+
+                database = load_data()
+                updated = False
+
+                for key in keys:
+                    if key in database:
+                        del database[key]
+                        updated = True
+
+                if updated:
+                    save_data(database)
+
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/json')
+                self.end_headers()
+                self.wfile.write(json.dumps({'success': True}).encode('utf-8'))
                 return
 
             # Otherwise 404
